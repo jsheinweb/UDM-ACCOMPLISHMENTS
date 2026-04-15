@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My QR Showcase</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Josefin+Sans:wght@200;400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --dark: #0a0a0a;
+      --dark2: #111111;
+      --dark3: #1a1a1a;
+      --text: #f0ece3;
+      --text-muted: #888880;
+      --border: rgba(201,168,76,0.2);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease;
+      transform: translate(-50%, -50%);
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid var(--gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transition: transform 0.35s ease, width 0.2s, height 0.2s;
+      transform: translate(-50%, -50%);
+      opacity: 0.6;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 2rem;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 30%, rgba(201,168,76,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 80% 70%, rgba(201,168,76,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    .hero-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.4em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.2s forwards;
+    }
+
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.5rem, 10vw, 8rem);
+      font-weight: 300;
+      line-height: 0.9;
+      text-align: center;
+      letter-spacing: -0.02em;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.4s forwards;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    .hero-sub {
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 2rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.6s forwards;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeUp 0.8s 1s forwards;
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 50px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      animation: scrollPulse 2s infinite;
+    }
+
+    /* ─── SECTION WRAPPER ─── */
+    section {
+      padding: 6rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .section-number {
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 300;
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── INFINITE SLIDER ADDITION ─── */
+    .slider-container {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      overflow: hidden;
+      background: var(--dark2);
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .slider-track {
+      display: flex;
+      width: calc(300px * 10); /* Adjust based on number of images */
+      animation: scroll 30s linear infinite;
+    }
+
+    .slider-track img {
+      width: 300px;
+      height: 200px;
+      object-fit: cover;
+      margin: 0 10px;
+      border: 1px solid var(--border);
+      filter: grayscale(30%);
+      transition: filter 0.3s;
+    }
+
+    .slider-track img:hover {
+        filter: grayscale(0%);
+    }
+
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(calc(-320px * 5)); } /* Moves by half the total images to loop */
+    }
+
+    /* ─── VIDEO GRID ─── */
+    .video-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 700px) {
+      .video-grid { grid-template-columns: 1fr; }
+    }
+
+    .video-card {
+      position: relative;
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      border-radius: 2px;
+      transition: transform 0.4s ease, border-color 0.3s;
+    }
+
+    .video-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--gold);
+    }
+
+    .video-card video {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      background: #050505;
+    }
+
+    .video-caption {
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .video-caption-title {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .video-caption-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+      opacity: 0.5;
+    }
+
+    .video-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.3s;
+      cursor: pointer;
+    }
+
+    .video-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    .play-btn {
+      width: 60px; height: 60px;
+      border: 1.5px solid var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .play-btn:hover {
+      background: var(--gold);
+      transform: scale(1.1);
+    }
+
+    .play-btn svg { fill: var(--text); width: 20px; height: 20px; margin-left: 3px; }
+
+    .video-placeholder {
+      width: 100%;
+      aspect-ratio: 16/9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+      color: var(--text-muted);
+    }
+
+    .video-placeholder svg { opacity: 0.3; width: 40px; height: 40px; }
+    .video-placeholder span { font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; }
+
+    /* ─── IMAGE GRID ─── */
+    .image-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 700px) {
+      .image-grid { grid-template-columns: 1fr; }
+    }
+
+    .image-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      transition: border-color 0.3s;
+    }
+
+    .image-card:hover { border-color: var(--gold); }
+    .image-card:nth-child(2) { margin-top: 3rem; }
+
+    .image-card img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+      aspect-ratio: 4/3;
+      filter: grayscale(20%) contrast(1.05);
+      transition: transform 0.6s ease, filter 0.4s;
+    }
+
+    .image-card:hover img {
+      transform: scale(1.03);
+      filter: grayscale(0%) contrast(1.1);
+    }
+
+    .image-info {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 1.5rem 1.2rem 1rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .img-placeholder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+      color: var(--text-muted);
+    }
+
+    .img-placeholder svg { opacity: 0.3; width: 36px; height: 36px; }
+    .img-placeholder span { font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; }
+
+    .hidden-element { display: none; }
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin: 0 2rem;
+      max-width: calc(100% - 4rem);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ─── QR SECTION ─── */
+    .qr-section {
+      background: var(--dark2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem;
+    }
+
+    .qr-inner {
+      max-width: 700px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    @media (max-width: 600px) {
+      .qr-inner { grid-template-columns: 1fr; text-align: center; }
+    }
+
+    .qr-box { position: relative; }
+    .qr-frame {
+      padding: 16px;
+      background: #fff;
+      border-radius: 4px;
+      display: inline-block;
+      position: relative;
+    }
+
+    .qr-frame::before, .qr-frame::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: var(--gold);
+      border-style: solid;
+    }
+    .qr-frame::before { top: -6px; left: -6px; border-width: 2px 0 0 2px; }
+    .qr-frame::after   { bottom: -6px; right: -6px; border-width: 0 2px 2px 0; }
+
+    .qr-frame-inner::before, .qr-frame-inner::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: var(--gold);
+      border-style: solid;
+    }
+    .qr-frame-inner::before { top: -6px; right: -6px; border-width: 2px 2px 0 0; }
+    .qr-frame-inner::after   { bottom: -6px; left: -6px; border-width: 0 0 2px 2px; }
+
+    #qrcode canvas, #qrcode img { display: block; }
+
+    .qr-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.4em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .qr-headline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .qr-headline em {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    .qr-desc {
+      font-size: 0.75rem;
+      line-height: 2;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 2rem;
+    }
+
+    .qr-url-input { display: flex; gap: 0.5rem; align-items: center; }
+    .qr-url-input input {
+      flex: 1;
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Josefin Sans', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      padding: 0.75rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .qr-url-input input:focus { border-color: var(--gold); }
+    .qr-btn {
+      background: var(--gold);
+      color: var(--dark);
+      border: none;
+      font-family: 'Josefin Sans', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .qr-btn:hover { background: var(--gold-light); }
+    .qr-btn:active { transform: scale(0.98); }
+
+    .qr-download {
+      margin-top: 0.75rem;
+      display: inline-block;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .qr-download:hover { color: var(--gold); }
+
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    footer span { color: var(--gold); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50%       { opacity: 1; transform: scaleY(0.7); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .instructions {
+      background: rgba(201,168,76,0.07);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1rem 1.5rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      line-height: 1.9;
+      color: var(--text-muted);
+      margin-bottom: 3rem;
+    }
+    .instructions strong { color: var(--gold); font-weight: 600; letter-spacing: 0.1em; }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="hero">
+    <p class="hero-label">Welcome · UDM LEARN </p>
+    <h1 class="hero-title">My <em>Accomplishments</em><br>Reports Website by: John Ralf Calinawagan</h1>
+    <p class="hero-sub">Videos &amp; Photography</p>
+    <div class="scroll-hint">
+      <div class="scroll-line"></div>
+      Scroll
+    </div>
+  </div>
+
+  <section>
+    <div class="section-header reveal">
+      <span class="section-number">01 /</span>
+      <h2 class="section-title">Videos</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="video-grid reveal">
+      <div class="video-card">
+        <div class="video-placeholder" id="vp1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>video1.mp4</span></div>
+        <video id="vid1" src="video1.mp4" preload="metadata" loop class="hidden-element"></video>
+        <div class="video-overlay" id="ov1" onclick="playVideo('vid1','ov1')"><div class="play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+        <div class="video-caption"><span class="video-caption-title">Video One</span><span class="video-caption-num">01</span></div>
+      </div>
+
+      <div class="video-card">
+        <div class="video-placeholder" id="vp2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>video2.mp4</span></div>
+        <video id="vid2" src="video2.mp4" preload="metadata" loop class="hidden-element"></video>
+        <div class="video-overlay" id="ov2" onclick="playVideo('vid2','ov2')"><div class="play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+        <div class="video-caption"><span class="video-caption-title">Video Two</span><span class="video-caption-num">02</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section>
+    <div class="section-header reveal">
+      <span class="section-number">02 /</span>
+      <h2 class="section-title">Photography Highlights with SK Harvey Biongan</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="image-grid reveal">
+      <div class="image-card">
+        <img id="img1" src="image.png" alt="Photo One" onerror="this.src='https://via.placeholder.com/400x300?text=Image+1'">
+        <div class="image-info">Photo One</div>
+      </div>
+      <div class="image-card">
+        <img id="img2" src="image copy.png" alt="Photo Two" onerror="this.src='https://via.placeholder.com/400x300?text=Image+2'">
+        <div class="image-info">Photo Two</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-header reveal">
+      <span class="section-number">03 /</span>
+      <h2 class="section-title">Accomplishment <em>Gallery</em></h2>
+      <div class="section-line"></div>
+    </div>
+    
+    <div class="slider-container reveal">
+      <div class="slider-track">
+        <img src="photo1.png" alt="Gallery slide 1: First photograph in the infinite scrolling carousel showcasing visual content from the collection">
+        <img src="photo2.png" alt="Gallery slide 2: Second photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+2'">
+        <img src="photo3.png" alt="Gallery slide 3: Third photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+3'">
+        <img src="photo4.png" alt="Gallery slide 4: Fourth photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+4'">
+        <img src="photo5.png" alt="Gallery slide 5: Fifth photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+5'">
+        <img src="photo1.png" alt="Gallery slide 1: First photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+1'">
+        <img src="photo2.png" alt="Gallery slide 2: Second photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+2'">
+        <img src="photo3.png" alt="Gallery slide 3: Third photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+3'">
+        <img src="photo4.png" alt="Gallery slide 4: Fourth photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+4'">
+        <img src="photo5.png" alt="Gallery slide 5: Fifth photograph in the infinite scrolling carousel showcasing visual content from the collection" onerror="this.src='https://via.placeholder.com/300x200?text=Slide+5'">
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <div class="qr-section">
+    <div class="qr-inner">
+      <div class="qr-box reveal">
+        <div class="qr-frame">
+          <div class="qr-frame-inner">
+            <div id="qrcode"></div>
+          </div>
+        </div>
+        <br>
+        <a class="qr-download" id="qrDownload" onclick="downloadQR()">↓ Download QR Code</a>
+      </div>
+
+      <div class="qr-info reveal">
+        <p class="qr-label">Scan to Share</p>
+        <h2 class="qr-headline">Your Personal<br><em>QR Code</em></h2>
+        <p class="qr-desc">
+          Share this QR code with anyone — when they scan it, they'll be taken directly to this page.
+        </p>
+        <div class="qr-url-input">
+          <input type="text" id="urlInput" placeholder="https://yoursite.com" />
+          <button class="qr-btn" onclick="generateQR()">Generate</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Crafted by <span>♥</span> · John Ralf Calinawagan</footer>
+
+  <script>
+    const cursor = document.getElementById('cursor');
+    const cursorRing = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx + 'px';
+      cursor.style.top  = my + 'px';
+    });
+
+    function animRing() {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      cursorRing.style.left = rx + 'px';
+      cursorRing.style.top  = ry + 'px';
+      requestAnimationFrame(animRing);
+    }
+    animRing();
+
+    const revealEls = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    revealEls.forEach(el => io.observe(el));
+
+    function checkVideoLoaded(videoId, placeholderId) {
+      const v = document.getElementById(videoId);
+      const p = document.getElementById(placeholderId);
+      v.addEventListener('loadeddata', () => {
+        v.classList.remove('hidden-element');
+        p.style.display = 'none';
+      });
+    }
+    checkVideoLoaded('vid1', 'vp1');
+    checkVideoLoaded('vid2', 'vp2');
+
+    function playVideo(videoId, overlayId) {
+      const v = document.getElementById(videoId);
+      const o = document.getElementById(overlayId);
+      v.play();
+      o.classList.add('hidden');
+    }
+
+    function generateQR(url) {
+      const container = document.getElementById('qrcode');
+      container.innerHTML = '';
+      const target = url || document.getElementById('urlInput').value.trim() || window.location.href;
+      new QRCode(container, { text: target, width: 180, height: 180 });
+    }
+
+    function downloadQR() {
+      const canvas = document.querySelector('#qrcode canvas');
+      const link = document.createElement('a');
+      link.download = 'my-qr-code.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    window.addEventListener('load', () => {
+      document.getElementById('urlInput').value = window.location.href;
+      generateQR(window.location.href);
+    });
+  </script>
+</body>
+</html>
